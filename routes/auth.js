@@ -3,6 +3,9 @@ const User = require('../models/User');
 // const Notes = require('../models/Notes');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const JWT_SECRETKEY = 'AZisagoodA$ap';
 
 // Create a User using: POST "/api/auth/createuser". No login required
 router.post('/createuser',
@@ -26,12 +29,37 @@ router.post('/createuser',
                 return res.status(400).json({error: "Sorry a user with this email already exsists in the database"});
             }
             
+            // bcryptJs - HASH PASSWORD
+            const salt = await bcrypt.genSalt(10);
+            const securedPassword = await bcrypt.hash(req.body.password, salt);
+
+            // // To check password
+            // bcrypt.compareSync("B4c0/\/", hash);        //true
+            // bcrypt.compareSync("not_bacon", hash);      //false
+            
             user = await User.create({
                 name: req.body.name,
                 email: req.body.email,
-                password: req.body.password,
+                password: securedPassword,
             });
-            res.json(user);
+
+
+            // jsonwebtokenJs - USE JWT TOKEN
+            const authToken = jwt.sign(
+                { 
+                    exp: Math.floor(Date.now() / 1000) + (60 * 60),
+                    id: user.id 
+                }, 
+                JWT_SECRETKEY);
+            // const authToken = jwt.sign(
+            //     { 
+            //         exp: Math.floor(Date.now() / 1000) + (60 * 60),
+            //         id: user.id 
+            //     }, 
+            //     JWT_SECRETKEY, 
+            //     { algorithm: 'RS256' });
+            res.json({authToken: authToken});
+
         } catch (error) {
             console.error(error.message);
             res.status(500).json({error: "Error occured"});
