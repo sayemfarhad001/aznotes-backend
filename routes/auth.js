@@ -32,10 +32,6 @@ router.post('/createuser',
             // bcryptJs - HASH PASSWORD
             const salt = await bcrypt.genSalt(10);
             const securedPassword = await bcrypt.hash(req.body.password, salt);
-
-            // // To check password
-            // bcrypt.compareSync("B4c0/\/", hash);        //true
-            // bcrypt.compareSync("not_bacon", hash);      //false
             
             user = await User.create({
                 name: req.body.name,
@@ -43,27 +39,69 @@ router.post('/createuser',
                 password: securedPassword,
             });
 
-
-            // jsonwebtokenJs - USE JWT TOKEN
-            const authToken = jwt.sign(
-                { 
-                    exp: Math.floor(Date.now() / 1000) + (60 * 60),
-                    id: user.id 
-                }, 
-                JWT_SECRETKEY);
-            // const authToken = jwt.sign(
-            //     { 
-            //         exp: Math.floor(Date.now() / 1000) + (60 * 60),
-            //         id: user.id 
-            //     }, 
-            //     JWT_SECRETKEY, 
-            //     { algorithm: 'RS256' });
+            // jsonwebtokenJs - create JWT TOKEN
+            const payload = {
+                exp: Math.floor(Date.now() / 1000) + (60 * 60),
+                user:{
+                    id: user.id
+                }
+            } 
+            const authToken = jwt.sign( payload, JWT_SECRETKEY );
+            // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
             res.json({authToken: authToken});
 
         } catch (error) {
             console.error(error.message);
-            res.status(500).json({error: "Error occured"});
+            res.status(500).json({error: "Internal Server Error"});
         }
 });
+
+
+// Authenticate a User using: POST "/api/auth/login". Login required
+router.post('/login',
+    [
+        body('email', "Enter a valid email").isEmail(),
+        body('password', "Password cannot be blank").exists(),
+    ], 
+    async (req, res) => {
+        
+        //If there are errors, return Bad request and the errors
+        const errors = validationResult(req);    
+        if(!errors.isEmpty()){
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const {email,password} = req.body; 
+
+        try {
+            //Check whether user with this email already exists
+            let user = await User.findOne({email});
+            if (!user){
+                return res.status(400).json({error: "Please try to login with correct credentials"});
+            }
+
+            // bcryptJs - Unhash Password
+            const isValidPassword = await bcrypt.compareSync(password, user.password);     //true or false
+            if(!isValidPassword){
+                return res.status(400).json({error: "Please try to login with correct credentials"});
+            }
+            
+            // jsonwebtokenJs - Check JWT TOKEN
+            const payload = {
+                exp: Math.floor(Date.now() / 1000) + (60 * 60),
+                user:{
+                    id: user.id
+                }
+            }
+            const authToken = jwt.sign( payload, JWT_SECRETKEY );
+            // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
+            res.json({authToken: authToken});
+
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).json({error: "Internal Server Error"});
+        }
+});
+
 
 module.exports = router;
