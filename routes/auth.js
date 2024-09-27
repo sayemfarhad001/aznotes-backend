@@ -5,9 +5,13 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const JWT_SECRETKEY = 'AZisagoodA$ap';
 
-// Create a User using: POST "/api/auth/createuser". No login required
+const getuser = require('../middleware/getuser');
+
+require('dotenv').config();
+const JWT_SECRETKEY = process.env.JWT_SECRETKEY;
+
+// ROUTE 1 : Create a User using: POST "/api/auth/createuser". No login required
 router.post('/createuser',
     [
         body('name', "Enter a valid name").isLength({min: 3}),
@@ -41,13 +45,15 @@ router.post('/createuser',
 
             // jsonwebtokenJs - create JWT TOKEN
             const payload = {
-                exp: Math.floor(Date.now() / 1000) + (60 * 60),
                 user:{
                     id: user.id
                 }
             } 
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
             // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
+            console.log("token pre", authToken)
+            console.log(user.password)
+            console.log(user.id)
             res.json({authToken: authToken});
 
         } catch (error) {
@@ -57,7 +63,7 @@ router.post('/createuser',
 });
 
 
-// Authenticate a User using: POST "/api/auth/login". Login required
+// ROUTE 2 : Authenticate a User using: POST "/api/auth/login". Login required
 router.post('/login',
     [
         body('email', "Enter a valid email").isEmail(),
@@ -82,20 +88,34 @@ router.post('/login',
 
             // bcryptJs - Unhash Password
             const isValidPassword = await bcrypt.compareSync(password, user.password);     //true or false
+            
+            console.log(isValidPassword);
             if(!isValidPassword){
                 return res.status(400).json({error: "Please try to login with correct credentials"});
             }
             
+
             // jsonwebtokenJs - Check JWT TOKEN
+            // const payload = {
+            //     // exp: Math.floor(Date.now() / 1000) + (60 * 60),
+            //     user:{
+            //         id: user.id
+            //     }
+            // }
+            // const authToken = jwt.sign( payload, JWT_SECRETKEY );
+            // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
+
             const payload = {
-                exp: Math.floor(Date.now() / 1000) + (60 * 60),
                 user:{
                     id: user.id
                 }
-            }
+            } 
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
-            // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
+            console.log("token post", authToken)
+            console.log(user.password)
+            console.log(user.id)
             res.json({authToken: authToken});
+
 
         } catch (error) {
             console.error(error.message);
@@ -103,5 +123,40 @@ router.post('/login',
         }
 });
 
+// ROUTE 3 : GET logged in User detail: POST "/api/auth/getuser". Login required
+router.get('/getuser', getuser, async (req, res) => {
+    try {
+
+            userId = req.user.id
+            //Check whether user with userid
+            const user = await User.findById(userId).select("-password");
+            res.send(user);
+            
+            // if (!user){
+            //     return res.status(400).json({error: "Please try to login with correct credentials"});
+            // }
+
+            // // bcryptJs - Unhash Password
+            // const isValidPassword = await bcrypt.compareSync(password, user.password);     //true or false
+            // if(!isValidPassword){
+            //     return res.status(400).json({error: "Please try to login with correct credentials"});
+            // }
+            
+            // // jsonwebtokenJs - Check JWT TOKEN
+            // const payload = {
+            //     exp: Math.floor(Date.now() / 1000) + (60 * 60),
+            //     user:{
+            //         id: user.id
+            //     }
+            // }
+            // const authToken = jwt.sign( payload, JWT_SECRETKEY );
+            // // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
+            // res.json({authToken: authToken});
+
+        } catch (error) {
+            console.error(error.message);
+            res.status(500).json({error: "Internal Server Error"});
+        }
+});
 
 module.exports = router;
