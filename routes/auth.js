@@ -52,8 +52,8 @@ router.post('/createuser',
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
             // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
             console.log("token pre", authToken)
-            console.log(user.password)
-            console.log(user.id)
+            // console.log(user.password)
+            // console.log(user.id)
             res.json({authToken: authToken});
 
         } catch (error) {
@@ -112,8 +112,8 @@ router.post('/login',
             } 
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
             console.log("token post", authToken)
-            console.log(user.password)
-            console.log(user.id)
+            // console.log(user.password)
+            // console.log(user.id)
             res.json({authToken: authToken});
 
 

@@ -2,7 +2,7 @@
 // require('dotenv').config();
 // const JWT_SECRETKEY = process.env.JWT_SECRETKEY;
 
-// const getNotes = (req, res, next)=>{
+// const getnotes = (req, res, next)=>{
 //     // Get Notes from user id to req object
 //     // const token = req.header('auth-token');
 //     // if(!token){
@@ -20,4 +20,4 @@
 
 // }
 
-// module.exports = getNotes;
+// module.exports = getnotes;
