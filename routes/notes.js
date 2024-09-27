@@ -90,9 +90,6 @@ router.put('/updatenote/:id', getuser, async (req, res) => {
 
 // ROUTE 4 : DELETE existing note if user is authenticated: DELETE "/deletenote". Login required
 router.delete('/deletenote/:id', getuser, async (req, res) => {
-
-    const {title, description, tag} = req.body;
-    
     //If there are errors, return Bad request and the errors
     const errors = validationResult(req);    
     if(!errors.isEmpty()){
@@ -116,7 +113,6 @@ router.delete('/deletenote/:id', getuser, async (req, res) => {
         console.error(error.message);
         res.status(500).json({error: "Internal Server Error"});
     }
-}
-)
+})
 
 module.exports = router;
