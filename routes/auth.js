@@ -19,18 +19,18 @@ router.post('/createuser',
         body('password', "Password must be atleast 5 characters").isLength({min: 5}),
     ], 
     async (req, res) => {
-        
+        let success = false;
         //If there are errors, return Bad request and the errors
         const errors = validationResult(req);    
         if(!errors.isEmpty()){
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({success, errors: errors.array() });
         }
 
         try {
             //Check whether user with this email already exists
             let user = await User.findOne({email: req.body.email});
             if (user){
-                return res.status(400).json({error: "Sorry a user with this email already exsists in the database"});
+                return res.status(400).json({success, error: "Sorry a user with this email already exsists in the database"});
             }
             
             // bcryptJs - HASH PASSWORD
@@ -51,10 +51,9 @@ router.post('/createuser',
             } 
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
             // const authToken = jwt.sign( data, JWT_SECRETKEY, { algorithm: 'RS256' });
-            console.log("token pre", authToken)
-            // console.log(user.password)
-            // console.log(user.id)
-            res.json({authToken: authToken});
+            // console.log("token pre", authToken)
+            success = true;
+            res.json({success, authToken: authToken});
 
         } catch (error) {
             console.error(error.message);
@@ -110,7 +109,7 @@ router.post('/login',
                 }
             } 
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
-            console.log("token post", authToken)
+            // console.log("token post", authToken)
             success = true;
             res.json({success, authToken});
 
@@ -125,7 +124,7 @@ router.post('/login',
 router.get('/getuser', getuser, async (req, res) => {
     try {
 
-            userId = req.user.id
+            let userId = req.user.id
             //Check whether user with userid
             const user = await User.findById(userId).select("-password");
             res.send(user);
