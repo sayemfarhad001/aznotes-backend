@@ -70,7 +70,7 @@ router.post('/login',
         body('password', "Password cannot be blank").exists(),
     ], 
     async (req, res) => {
-        
+        let success = false;
         //If there are errors, return Bad request and the errors
         const errors = validationResult(req);    
         if(!errors.isEmpty()){
@@ -83,15 +83,14 @@ router.post('/login',
             //Check whether user with this email already exists
             let user = await User.findOne({email});
             if (!user){
-                return res.status(400).json({error: "Please try to login with correct credentials"});
+                return res.status(400).json({success, error: "Please try to login with correct credentials"});
             }
 
             // bcryptJs - Unhash Password
             const isValidPassword = await bcrypt.compareSync(password, user.password);     //true or false
             
-            console.log(isValidPassword);
             if(!isValidPassword){
-                return res.status(400).json({error: "Please try to login with correct credentials"});
+                return res.status(400).json({success, error: "Please try to login with correct credentials"});
             }
             
 
@@ -112,9 +111,8 @@ router.post('/login',
             } 
             const authToken = jwt.sign( payload, JWT_SECRETKEY );
             console.log("token post", authToken)
-            // console.log(user.password)
-            // console.log(user.id)
-            res.json({authToken: authToken});
+            success = true;
+            res.json({success, authToken});
 
 
         } catch (error) {
